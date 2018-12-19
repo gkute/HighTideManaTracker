@@ -1,0 +1,14 @@
+## Interface: 80100
+## Title: High Tide Mana Tracker
+## Version: 2.3
+## Notes: Addon to handle High Tide Mana Tracking
+## Author: Bowtiesphd
+## OptionalDeps: Ace3
+## X-Embeds: Ace3
+
+## SavedVariablesPerCharacter: manaUsed, manaUsedInverse, reloadedUI, zones, textFormatOptions, textFontOptions, menuOptions
+
+embeds.xml
+Locale\Locales.xml
+ManaTracker.xml
+core.lua
