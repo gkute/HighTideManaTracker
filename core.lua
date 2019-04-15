@@ -244,11 +244,11 @@ function HTMT:COMBAT_LOG_EVENT_UNFILTERED()
                         for k,v in ipairs(shamanSpellCosts) do
                             if k == spellName then
                                 if menuOptions.inverseCheckButton then
-                                    manaCountInverse = manaCountInverse - costs[1].cost
+                                    manaCountInverse = manaCountInverse - v
                                     manaUsedInverse = manaCountInverse
                                     HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
                                 else
-                                    manaCount = manaCount + costs[1].cost
+                                    manaCount = manaCount + v
                                     manaUsed = manaCount
                                     HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
                                 end
