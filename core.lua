@@ -1,17 +1,20 @@
---[[
-    Special thanks to Niseko for code help.  You can find his WA located here: https://wago.io/rk7idBBoX
-]]--
-
 HTMT = LibStub("AceAddon-3.0"):NewAddon("HighTideManaTracker", "AceConsole-3.0", "AceEvent-3.0")
+
+
+-- grab localization if available
+local L = LibStub("AceLocale-3.0"):GetLocale("htmtMenuTranslations")
 
 -- extra Ace libs
 local AceGUI = LibStub("AceGUI-3.0")
+local LSM = LibStub("LibSharedMedia-3.0")
+
 
 -- variables used to handle the tracking of mana spent
 local manaTrigger = 40000
 local manaCount = 0
 local manaCountInverse = 40000
 local formatTableOptions = {}
+local fontTableOptions = {}
 ui_reload=false
 ui_logout=false
 ui_quit=false
@@ -38,14 +41,17 @@ function HTMT:OnEnable()
     self:RegisterEvent("ADDON_LOADED")
     self:RegisterEvent("ENCOUNTER_START", "Encounter_Start")
     self:RegisterEvent("PLAYER_TALENT_UPDATE")
+    self:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
     self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     self:RegisterEvent("PLAYER_LEAVING_WORLD")
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
+    -- self:RegisterEvent("UNIT_AURA")
 end
 
 -- register slash commands
 function HTMT:OnInitialize()
     self:RegisterChatCommand('htmt', 'SlashCommands')
+    LSM.RegisterCallback(self, "LibSharedMedia_Registered", "UpdateUsedMedia")
 end
 
 -- Handle the initialization of values from nil to 0 first time addon is loaded.
@@ -59,19 +65,69 @@ function HTMT:ADDON_LOADED()
     if reloadedUI == nil then
         reloadedUI = false
     end
-    if zones == nil or table.getn(zones) < 5 then
-        zones = {"Uldir", "Battle for Dazar'alor", "Crucible of Storms", "Arathi Highlands", "Tiragarde Sound"}
-    end
     if menuOptions == nil then
         menuOptions = {}
+        menuOptions.inverseCheckButton =  false
+        menuOptions.lockFrameCheckButton = true
         menuOptions.dropdownValue = 1
+        menuOptions.fontVal = 16
+        menuOptions.fontName = "Fonts\\MORPHEUS_CYR.TTF"
+        menuOptions.manaTrackerSize = {100,40}
+        menuOptions.textFrameSizeSlider = 0
+        menuOptions.backDropAlphaSlider = 1
     end
     if textFormatOptions == nil or table.getn(textFormatOptions) < 10 then
         textFormatOptions = {"25,350", "25350 : 40k", "25350 / 40k", "25.35k", "25.35k : 40k", "25.35k / 40k","25.4k", "25.4k : 40k", "25.4k / 40k"}
     end
-    if textFontOptions == nil then
-        textFontOptions = {}
+    if shamanSpellCosts == nil then
+        shamanSpellCosts = {
+            ["Riptide"] = 1600,
+            ["Healing Wave"] = 1800,
+            ["Chain Heal"] = 5000,
+            ["Healing Surge"] = 3800,
+            ["Healing Rain"] = 4320,
+            ["Healing Steam Totem"] = 2200,
+            ["Earth Shield"] = 2000,
+            ["Unleash Life"] = 800,
+            ["Earthgrab Totem"] = 500,
+            ["Earthen Wall Totem"] = 2200,
+            ["Ancestral Protection Totem"] = 2200,
+            ["Downpour"] = 3000,
+            ["Cloudburst Totem"] = 1720,
+            ["Flame Shock"] = 3000,
+            ["Lava Burst"] = 1200,
+            ["Chain Lightning"] = 200,
+            ["Bloodlust"] = 4300,
+            ["Spirit Link Totem"] = 2200,
+            ["Healing Tide Totem"] = 1120,
+            ["Spiritwalker's Grace"] = 2820,
+            ["Earthbind Totem"] = 500,
+            ["Tremor Totem"] = 460,
+            ["Capacitor Totem"] = 2000,
+            ["Purify Spirit"] = 1300,
+            ["Purge"] = 1600,
+            ["Heroism"] = 4300,
+        }
+    end 
+end
+
+function HTMT:UpdateUsedMedia(event, mediatype, key)
+    fontTableOptions = LSM:List("font")
+    -- for i, fonts in ipairs(fontTableOptions) do
+    --     local fontName = LSM:Fetch("font", fontTableOptions[key])
+    --     table.insert(fontTableOptions, fontName)
+    -- end
+    -- HTMT:Print("UpdateUsedMedia occured.")
+end
+
+function HTMT_TestUpdate()
+    fontTableOptions = LSM:List("font")
+    local tempTable = {}
+    for i, fonts in ipairs(fontTableOptions) do
+        local fontName = LSM:Fetch("font", fontTableOptions[i])
+        table.insert(tempTable, fontName)
     end
+    textFontOptions = tempTable
 end
 
 -- reset manaCount on encounter start
@@ -85,89 +141,93 @@ function HTMT:Encounter_Start(...)
         manaCount = 0
         manaUsed = 0
         HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
-        self:Print("Mana has been reset!")
+        self:Print(L["Mana count has been reset!"])
     else
         manaCountInverse = 40000
         manaUsedInverse = 40000
         HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
-        self:Print("Mana has been reset!")  
+        self:Print(L["Mana count has been reset!"])  
     end
 end
--- function HTMT:ENCOUNTER_START()
---     --local specID = select(1, GetSpecializationInfo(GetSpecialization()))
---     if select(1, GetSpecializationInfo(GetSpecialization())) ~= 264 then return end
-
---     local zone = GetZoneText()
---     local subZone = GetSubZoneText()
-
---     if menuOptions.inverseCheckButton then
---         for i,v in ipairs(zones) do
---             if zone == v then
---                 manaCountInverse = 40000
---                 manaUsedInverse = 40000
---                 HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
---                 self:Print("Mana has been reset!")  
---             end
---         end
---     else
---         for i,v in ipairs(zones) do
---             if zone == v then
---                 manaCount = 0
---                 manaUsed = 0
---                 HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
---                 self:Print("Mana has been reset!")
---             end
---         end
---     end
--- end
 
 -- reset manaCount on swapping to high tide
 function HTMT:PLAYER_TALENT_UPDATE()
+    local learned = select(10,GetTalentInfoBySpecialization(3,7,1))
+    if learned and reloadedUI then
+        if menuOptions.inverseCheckButton then
+            manaCountInverse = manaUsedInverse
+            HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
+            htmtManaTracker:Show()
+        else
+            manaCount = manaUsed
+            HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
+            htmtManaTracker:Show()
+        end
+    else
+        if menuOptions.inverseCheckButton then
+            if not learned and not reloadedUI then
+                manaCountInverse = 40000
+                manaUsedInverse = 40000
+                HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
+                htmtManaTracker:Hide()
+                self:Print(L["Mana count has been reset!"])
+            else
+                HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
+                htmtManaTracker:Show()
+            end
+        else
+            if not learned and not reloadedUI then
+                manaCount = 0
+                manaUsed = 0
+                HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
+                htmtManaTracker:Hide()
+                self:Print(L["Mana count has been reset!"])
+            else
+                HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
+                htmtManaTracker:Show()
+            end
+        end
+    end
+end
+
+function HTMT:ACTIVE_TALENT_GROUP_CHANGED()
     local specID = select(1, GetSpecializationInfo(GetSpecialization()))
     if specID ~= 264 then
+       manaCount = 0
+        manaUsed = 0
+        manaCountInverse = 40000
+        manaUsedInverse = 40000
+        self:Print(L["Mana count has been reset!"])
         htmtManaTracker:Hide()
-        return
-    else
-        htmtManaTracker:Show()
     end
-    local learned = select(10,GetTalentInfoBySpecialization(3,7,1))
-    if menuOptions.inverseCheckButton then
-        if not learned then
-            manaCountInverse = 40000
-            manaUsedInverse = 40000
-            HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
-            htmtManaTracker:Hide()
-            self:Print("Mana has been reset!")
-        else
-            htmtManaTracker:Show()
-        end
-    else
-        if not learned then
-            manaCount = 0
-            manaUsed = 0
-            HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
-            htmtManaTracker:Hide()
-            self:Print("Mana has been reset!")
-        else
-            htmtManaTracker:Show()
-        end
-    end
-
 end
 
 -- main driver behind tracking mana spent towards high tide
 function HTMT:COMBAT_LOG_EVENT_UNFILTERED()
-    -- local specID = select(1, GetSpecializationInfo(GetSpecialization()))
     if select(1, GetSpecializationInfo(GetSpecialization())) ~= 264 then return end
     local learned = select(10,GetTalentInfoBySpecialization(3,7,1))
     local subevent = select(2, CombatLogGetCurrentEventInfo())
     local sourceGUID = select(4, CombatLogGetCurrentEventInfo())
     local spellID = select(12, CombatLogGetCurrentEventInfo())
+    local spellName = select(13,CombatLogGetCurrentEventInfo())
+
+    --innervate spell id 29166
+    local innervateBuff = false
+    for i=1,40 do 
+        local B=UnitBuff("player",i); 
+        if B == "Innervate" then
+             innervateBuff = true
+        else
+            innervateBuff = false
+        end
+    end
+
 
     if subevent == "SPELL_CAST_SUCCESS" and (sourceGUID == UnitGUID("player")) and learned then
         local costs = GetSpellPowerCost(spellID)
-        if costs then
-            for _, costInfo in ipairs(costs) do -- this for loop credit to Niseko
+        -- Special thanks to Niseko for code help for the below code.  You can find his WA located here: https://wago.io/rk7idBBoX
+        if costs or innervateBuff then
+            for _, costInfo in ipairs(costs) do
                 if (costInfo.type == UnitPowerType("player")) then
                     local spellCost = costInfo.cost
                     if spellCost ~= 0 then
@@ -180,6 +240,22 @@ function HTMT:COMBAT_LOG_EVENT_UNFILTERED()
                             manaUsed = manaCount
                             HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
                         end
+                    elseif innervateBuff then
+                        for k,v in ipairs(shamanSpellCosts) do
+                            if k == spellName then
+                                if menuOptions.inverseCheckButton then
+                                    manaCountInverse = manaCountInverse - costs[1].cost
+                                    manaUsedInverse = manaCountInverse
+                                    HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
+                                else
+                                    manaCount = manaCount + costs[1].cost
+                                    manaUsed = manaCount
+                                    HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
+                                end
+                                break
+                            end
+                        end
+                        
                     end
                 end
             end
@@ -202,7 +278,6 @@ end
 
 -- check if reloadui was true and if was restore manaCount value otherwise was logout/login so reset to 0
 function HTMT:PLAYER_ENTERING_WORLD()
-    -- local specID = select(1, GetSpecializationInfo(GetSpecialization()))
     local learned = select(10,GetTalentInfoBySpecialization(3,7,1))
     if select(1, GetSpecializationInfo(GetSpecialization())) ~= 264 or learned ~= true then 
         htmtManaTracker:Hide()
@@ -220,45 +295,34 @@ function HTMT:PLAYER_ENTERING_WORLD()
     else
         htmtManaTracker:EnableMouse(true)
     end
-    if reloadedUI and (ui_logout ~= true) and (ui_quit ~= true) then
-        if menuOptions.inverseCheckButton then
-            manaCountInverse = manaUsedInverse
-            HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
-        else
-            manaCount = manaUsed
-            HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
-        end
+    reloadedUI = false 
+    if menuOptions.inverseCheckButton then
+        manaCountInverse = manaUsedInverse
+        HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
     else
-        if menuOptions.inverseCheckButton then
-            manaCountInverse = 40000
-            HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
-        else
-            manaCount = 0
-            HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
-        end
+        manaCount = manaUsed
+        HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
     end
 end
 
 -- check for if ui_reload happened, if yes then store manaCount and true for reloadUI otherwise 0 and false
 function HTMT:PLAYER_LEAVING_WORLD()
-    if ui_reload or (ui_logout ~= true) and (ui_quit ~= true) then 
-        if menuOptions.inverseCheckButton then
-            manaUsedInverse = manaCountInverse
-            reloadedUI = true
-        else
-            manaUsed = manaCount
-            reloadedUI = true
-        end
-    else
+    if ui_logout or ui_quit then 
         manaUsedInverse = 40000
         reloadedUI = false
         manaUsed = 0
+    else
+        reloadedUI = true
+        if menuOptions.inverseCheckButton then
+            manaUsedInverse = manaCountInverse
+        else
+            manaUsed = manaCount
+        end
     end
 end
 
 -- handle the addons slash commands
 function HTMT:SlashCommands(input)
-    --local specID = select(1, GetSpecializationInfo(GetSpecialization()))
     if select(1, GetSpecializationInfo(GetSpecialization())) ~= 264 then return end
     input = string.lower(input)
     local command,value,_ = strsplit(" ", input)
@@ -267,7 +331,7 @@ function HTMT:SlashCommands(input)
         HTMT_ToggleMenu()
     elseif command == "show" then
         htmtManaTracker:Show()
-        HTMT:Print("ManaTracker is now being shown!")
+        HTMT:Print(L["ManaTracker is now being shown!"])
     elseif command == "hide" then
         htmtManaTracker:Hide()
         HTMT:Print("ManaTracker is now being hidden!")
@@ -292,23 +356,28 @@ function HTMT:SlashCommands(input)
             htmtManaTracker:EnableMouse(false)
         end
     elseif command == "help" then
-        HTMT:Print("\tHigh Tide Mana Tracker")
-        HTMT:Print("\"/htmt\" - to open the options menu!")
-        HTMT:Print("\"/htmt show\" - to show the tracker if hidden!")
-        HTMT:Print("\"/htmt hide\" - to hide the tracker if shown!")
-        HTMT:Print("\"/htmt inverse\" - to swap between counting up or down!")
-        HTMT:Print("\"/htmt lock\" -  to lock or unlock the tracker window!")
-        HTMT:Print("==========================================")
+        HTMT:Print("========High Tide Mana Tracker========")
+        HTMT:Print(L["/htmt - to open the options menu!"])
+        HTMT:Print(L["/htmt show - to show the tracker if hidden!"])
+        HTMT:Print(L["/htmt hide - to hide the tracker if shown!"])
+        HTMT:Print(L["/htmt inverse - to swap between counting up or down!"])
+        HTMT:Print(L["/htmt lock -  to lock or unlock the tracker window!"])
+        HTMT:Print("======================================")
     end
 
 end
 
+-- function to format the text, i do not have credit for writing this, it belongs to Richard Warburton.
 function comma_value(n) -- credit http://richard.warburton.it
 	local left,num,right = string.match(n,'^([^%d]*%d)(%d*)(.-)$')
 	return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
 end
 
+-- function to update the text on the frame anytime an update occurs
 function HTMT_UpdateTextNonProgressBar(manaValue, formatType, fontType)
+    if fontType == 2 then
+        htmtManaTrackerManaCount:SetText("")
+    end
     if formatType == 1 then
         -- display text in this format
         manaValue = comma_value(manaValue)
@@ -359,17 +428,19 @@ function HTMT_UpdateTextNonProgressBar(manaValue, formatType, fontType)
     end
 end
 
+-- function to toggle the options menu
 function HTMT_ToggleMenu()
     if not HTMT.menu then HTMT:CreateOptionsMenu() end
     if HTMT.menu:IsShown() then
         HTMT.menu:Hide()
-        HTMT:Print("Options menu hidden, for other commands use \"/htmt help\"")
+        HTMT:Print(L["Options menu hidden, for other commands use /htmt help!"])
     else
         HTMT.menu:Show()
-        HTMT:Print("Options menu loaded, for other commands use \"/htmt help\"")
+        HTMT:Print(L["Options menu loaded, for other commands use /htmt help!"])
     end
 end
 
+-- setcallback function for the inverse checkbox
 function HTMT_SaveCheckBoxState(widget, event, value)
     menuOptions.inverseCheckButton = value
     if value then
@@ -383,15 +454,18 @@ function HTMT_SaveCheckBoxState(widget, event, value)
     end
 end
 
+-- setcallback function for the progressbar(once implemented)
 function HTMT_SaveProgressBarCheckBoxState(widget, event, value)
     menuOptions.progressBarCheckButton = value
 end
 
+-- setcallback function for the colorpicker
 function HTMT_ColorPickerConfirmed(widget, event, r, g, b, a)
     menuOptions.textColorPicker = {r,g,b,a}
     htmtManaTrackerManaCount:SetTextColor(r,g,b,a)
 end
 
+-- setcallback function for the dropdown text format
 function HTMT_DropdownState(widget, event, key, checked)
     menuOptions.dropdownValue = key
     if menuOptions.inverseCheckButton then
@@ -401,6 +475,7 @@ function HTMT_DropdownState(widget, event, key, checked)
     end
 end
 
+-- setcallback function for the lock checkbox
 function HTMT_LockFrameCheckBoxState(widget, event, value)
     menuOptions.lockFrameCheckButton = value
     if menuOptions.lockFrameCheckButton then
@@ -410,6 +485,7 @@ function HTMT_LockFrameCheckBoxState(widget, event, value)
     end
 end
 
+-- function to handle the sliding of the slider, this fires anytime the slider moves
 function HTMT_ResizeFrameSliderUpdater(widget, event, value)
     menuOptions.textFrameSizeSlider = value
     local multiplier = value
@@ -419,44 +495,86 @@ function HTMT_ResizeFrameSliderUpdater(widget, event, value)
     htmtManaTracker:SetWidth(width)
     htmtManaTracker:SetHeight(height)
     htmtManaTrackerManaCount:SetSize(width, height)
-    htmtManaTrackerManaCount:SetFont("Fonts\\MORPHEUS.ttf",fontVal)
-    --htmtManaTrackerManaCount:SetTextHeight(fontVal)
-    menuOptions.fontVal = fontVal
-end
-
-function HTMT_SetTrackerSizeOnLogin()
-    if table.getn(menuOptions.manaTrackerSize) == 2 and menuOptions.fontVal then
-        htmtManaTracker:SetWidth(menuOptions.manaTrackerSize[1])
-        htmtManaTracker:SetHeight(menuOptions.manaTrackerSize[2])
-        htmtManaTrackerManaCount:SetSize(menuOptions.manaTrackerSize[1], menuOptions.manaTrackerSize[2])
-        htmtManaTrackerManaCount:SetFont("Fonts\\MORPHEUS.ttf",menuOptions.fontVal)
-        --htmtManaTrackerManaCount:SetTextHeight(menuOptions.fontVal)
+    if menuOptions.fontName then
+        htmtManaTrackerManaCount:SetFont(menuOptions.fontName,fontVal)
+        --htmtManaTrackerManaCount:SetTextHeight(fontVal)
+        menuOptions.fontVal = fontVal
+    else
+        htmtManaTrackerManaCount:SetFont("Fonts\\MORPHEUS.ttf",fontVal)
+        --htmtManaTrackerManaCount:SetTextHeight(fontVal)
+        menuOptions.fontVal = fontVal
     end
 end
 
+-- function to update the tracker size from user settings on login
+function HTMT_SetTrackerSizeOnLogin()
+    if table.getn(menuOptions.manaTrackerSize) == 2 and menuOptions.fontVal and menuOptions.fontName and menuOptions.backDropAlphaSlider then
+        htmtManaTracker:SetWidth(menuOptions.manaTrackerSize[1])
+        htmtManaTracker:SetHeight(menuOptions.manaTrackerSize[2])
+        htmtManaTrackerManaCount:SetSize(menuOptions.manaTrackerSize[1], menuOptions.manaTrackerSize[2])
+        htmtManaTrackerManaCount:SetFont(menuOptions.fontName,menuOptions.fontVal)
+        htmtManaTracker:SetBackdropColor(0,0,0,menuOptions.backDropAlphaSlider)
+        htmtManaTracker:SetBackdropBorderColor(255,255,255,menuOptions.backDropAlphaSlider)
+        --htmtManaTrackerManaCount:SetTextHeight(fontVal)
+    else
+        htmtManaTrackerManaCount:SetFont("Fonts\\MORPHEUS.ttf", 16)
+        --htmtManaTrackerManaCount:SetTextHeight(fontVal)
+        menuOptions.fontVal = fontVal
+    end
+end
+
+-- SetCallBack function that handles when the person stops sliding the slider
 function HTMT_ResizeFrameSliderDone(widget, event, value)
     menuOptions.textFrameSizeSlider = value
     menuOptions.manaTrackerSize = {htmtManaTracker:GetWidth(), htmtManaTracker:GetHeight()}
 end
 
-function HTMT:CreateOptionsMenu()
-    -- grab localization if available
-    local L = LibStub("AceLocale-3.0"):GetLocale("htmtMenuTranslations")
+-- Callback function for the font picker dropdown
+function HTMT_FontPickerDropDownState(widget, event, key, checked)
+    menuOptions.fontPickerDropDown = key
+    menuOptions.fontName = LSM:Fetch("font", fontTableOptions[key])
+    if table.getn(menuOptions.manaTrackerSize) == 2 and menuOptions.fontVal and menuOptions.fontName then
+        htmtManaTracker:SetWidth(menuOptions.manaTrackerSize[1])
+        htmtManaTracker:SetHeight(menuOptions.manaTrackerSize[2])
+        htmtManaTrackerManaCount:SetSize(menuOptions.manaTrackerSize[1], menuOptions.manaTrackerSize[2])
+        htmtManaTrackerManaCount:SetFont(menuOptions.fontName,menuOptions.fontVal)
+        htmtManaTracker:Hide()
+        htmtManaTracker:Show()
+        HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 2)
+    end
+end
 
+-- callback for the backdrop opacity slider while moving
+function HTMT_BackDropSliderOnValueChanged(widget, event, value)
+    menuOptions.backDropAlphaSlider = value
+    htmtManaTracker:SetBackdropColor(0,0,0,value)
+    htmtManaTracker:SetBackdropBorderColor(255,255,255,value)
+end
+
+-- callback for the backdrop opacity slider when dont moving
+function HTMT_BackDropSliderDone(widget, event, value)
+    menuOptions.backDropAlphaSlider = value
+end
+
+-- create the options menu
+function HTMT:CreateOptionsMenu()
+    -- main menu frame
     local menu = AceGUI:Create("Frame")
     menu:SetTitle("High Tide Mana Tracker Options")
-    menu:SetStatusText("v2.3")
+    menu:SetStatusText("v"..GetAddOnMetadata("HighTideManaTracker", "Version"))
     menu:SetWidth(250)
-    menu:SetHeight(250)
+    menu:SetHeight(300)
     menu:SetLayout("Flow")
     menu:Hide()
     HTMT.menu = menu
 
     HTMT_menu = menu.frame
-    menu.frame:SetMaxResize(250, 250)
+    menu.frame:SetMaxResize(250, 300)
+    menu.frame:SetMinResize(250,300)
     menu.frame:SetFrameStrata("HIGH")
     menu.frame:SetFrameLevel(1)
 
+    --inverse checkbox
     local inverseCheckButton = AceGUI:Create("CheckBox")
     inverseCheckButton:SetLabel(L["Inverse"])
     inverseCheckButton:SetWidth(80)
@@ -469,18 +587,6 @@ function HTMT:CreateOptionsMenu()
     menu:AddChild(inverseCheckButton)
     menu.inverseCheckButton = inverseCheckButton
 
-    -- local progressBarCheckButton = AceGUI:Create("CheckBox")
-    -- progressBarCheckButton:SetLabel("Progress Bar")
-    -- progressBarCheckButton:SetWidth(125)
-    -- progressBarCheckButton:SetHeight(22)
-    -- progressBarCheckButton:SetType("checkbox")
-    -- progressBarCheckButton:ClearAllPoints()
-    -- if menuOptions.progressBarCheckButton then progressBarCheckButton:SetValue(menuOptions.progressBarCheckButton)end
-    -- progressBarCheckButton:SetPoint("TOPLEFT", menu.frame, "TOPLEFT",6,-25)
-    -- progressBarCheckButton:SetCallback("OnValueChanged",HTMT_SaveProgressBarCheckBoxState)
-    -- menu:AddChild(progressBarCheckButton)
-    -- menu.progressBarCheckButton = progressBarCheckButton
-
     -- checkbox for locking the frames position
     local lockFrameCheckButton = AceGUI:Create("CheckBox")
     lockFrameCheckButton:SetLabel(L["Lock"])
@@ -492,8 +598,9 @@ function HTMT:CreateOptionsMenu()
     lockFrameCheckButton:SetPoint("TOPLEFT", menu.frame, "TOPLEFT",6,-25)
     lockFrameCheckButton:SetCallback("OnValueChanged",HTMT_LockFrameCheckBoxState)
     menu:AddChild(lockFrameCheckButton)
-    menu.inverseCheckButton = inverseCheckButton
+    menu.lockFrameCheckButton = lockFrameCheckButton
 
+    -- colorpicker for changing the color of the text
     local textColorPicker = AceGUI:Create("ColorPicker")
     if menuOptions.textColorPicker then 
         textColorPicker:SetColor(menuOptions.textColorPicker[1], menuOptions.textColorPicker[2], menuOptions.textColorPicker[3], menuOptions.textColorPicker[4]) 
@@ -507,8 +614,9 @@ function HTMT:CreateOptionsMenu()
     menu:AddChild(textColorPicker)
     menu.textColorPicker = textColorPicker
 
+    -- dropdown for picking the text format
     local textStyleDropDown = AceGUI:Create("Dropdown")
-    textStyleDropDown:SetLabel("Text Format")
+    textStyleDropDown:SetLabel(L["Text Format"])
     textStyleDropDown:SetWidth(125)
     textStyleDropDown:SetMultiselect(false)
     textStyleDropDown:ClearAllPoints()
@@ -519,6 +627,7 @@ function HTMT:CreateOptionsMenu()
     menu:AddChild(textStyleDropDown)
     menu.textStyleDropDown = textStyleDropDown
 
+    -- slider for changing the size of the tracker and text
     local textFrameSizeSlider = AceGUI:Create("Slider")
     textFrameSizeSlider:SetLabel(L["Tracker Size"])
     textFrameSizeSlider:SetWidth(150)
@@ -532,4 +641,34 @@ function HTMT:CreateOptionsMenu()
     menu:AddChild(textFrameSizeSlider)
     menu.textFrameSizeSlider = textFrameSizeSlider
 
+    -- Slider for the opacity of the backdrop and/or border
+    local backDropAlphaSlider = AceGUI:Create("Slider")
+    backDropAlphaSlider:SetLabel(L["Backdrop Opacity"])
+    backDropAlphaSlider:SetWidth(150)
+    backDropAlphaSlider:SetIsPercent(true)
+    if menuOptions.backDropAlphaSlider then backDropAlphaSlider:SetValue(menuOptions.backDropAlphaSlider) else backDropAlphaSlider:SetValue(1) end
+    backDropAlphaSlider:SetSliderValues(0,1,.01)
+    backDropAlphaSlider:ClearAllPoints()
+    backDropAlphaSlider:SetPoint("LEFT", menu.frame, "LEFT", 6, 0)
+    backDropAlphaSlider:SetCallback("OnValueChanged", HTMT_BackDropSliderOnValueChanged)
+    backDropAlphaSlider:SetCallback("OnMouseUp", HTMT_BackDropSliderDone)
+    menu:AddChild(backDropAlphaSlider)
+    menu.backDropAlphaSlider = backDropAlphaSlider
+
+    -- Dropdown for different font options
+    local fontPickerDropDown = AceGUI:Create("Dropdown")
+    fontPickerDropDown:SetLabel(L["Choose Font"])
+    fontPickerDropDown:SetWidth(250)
+    fontPickerDropDown:SetMultiselect(false)
+    fontPickerDropDown:ClearAllPoints()
+    fontPickerDropDown:SetList(LSM:List("font"))
+    if menuOptions.fontName and menuOptions.fontPickerDropDown then 
+        fontPickerDropDown:SetText(fontTableOptions[menuOptions.fontPickerDropDown])
+    else
+        fontPickerDropDown:SetText("Morpheus")
+    end
+    fontPickerDropDown:SetPoint("LEFT", menu.frame, "LEFT", 6, 0)
+    fontPickerDropDown:SetCallback("OnValueChanged", HTMT_FontPickerDropDownState)
+    menu:AddChild(fontPickerDropDown)
+    menu.fontPickerDropDown = fontPickerDropDown
 end

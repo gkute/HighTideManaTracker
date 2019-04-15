@@ -1,12 +1,12 @@
 ## Interface: 80100
-## Title: High Tide Mana Tracker
-## Version: 2.3
+## Title: High Tide |cff0070deMana Tracker|r
+## Version: 2.7
 ## Notes: Addon to handle High Tide Mana Tracking
 ## Author: Bowtiesphd
 ## OptionalDeps: Ace3
 ## X-Embeds: Ace3
 
-## SavedVariablesPerCharacter: manaUsed, manaUsedInverse, reloadedUI, zones, textFormatOptions, textFontOptions, menuOptions
+## SavedVariablesPerCharacter: manaUsed, manaUsedInverse, reloadedUI, textFormatOptions, menuOptions, shamanSpellCosts
 
 embeds.xml
 Locale\Locales.xml
