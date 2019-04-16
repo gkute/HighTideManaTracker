@@ -134,19 +134,18 @@ end
 function HTMT:Encounter_Start(...)
     local difficultyID = select(4,...)
     if select(1, GetSpecializationInfo(GetSpecialization())) ~= 264 then return end
-    if difficultyID ~= 14 or difficultyID ~= 15 or difficultyID ~= 16 or difficultyID ~= 17 then
-        return  
-    end
-    if menuOptions.inverseCheckButton then
-        manaCount = 0
-        manaUsed = 0
-        HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
-        self:Print(L["Mana count has been reset!"])
-    else
-        manaCountInverse = 40000
-        manaUsedInverse = 40000
-        HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
-        self:Print(L["Mana count has been reset!"])  
+    if (difficultyID == 14) or (difficultyID == 15) or (difficultyID == 16) or (difficultyID == 17) then
+        if not menuOptions.inverseCheckButton then
+            manaCount = 0
+            manaUsed = 0
+            HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
+            self:Print(L["Mana count has been reset!"])
+        else
+            manaCountInverse = 40000
+            manaUsedInverse = 40000
+            HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
+            self:Print(L["Mana count has been reset!"])  
+        end
     end
 end
 
@@ -210,6 +209,7 @@ function HTMT:COMBAT_LOG_EVENT_UNFILTERED()
     local sourceGUID = select(4, CombatLogGetCurrentEventInfo())
     local spellID = select(12, CombatLogGetCurrentEventInfo())
     local spellName = select(13,CombatLogGetCurrentEventInfo())
+    --print(spellName)
 
     --innervate spell id 29166
     local innervateBuff = false
@@ -241,7 +241,7 @@ function HTMT:COMBAT_LOG_EVENT_UNFILTERED()
                             HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
                         end
                     elseif innervateBuff then
-                        for k,v in ipairs(shamanSpellCosts) do
+                        for k,v in pairs(shamanSpellCosts) do
                             if k == spellName then
                                 if menuOptions.inverseCheckButton then
                                     manaCountInverse = manaCountInverse - v
