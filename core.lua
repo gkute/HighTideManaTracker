@@ -211,22 +211,11 @@ function HTMT:COMBAT_LOG_EVENT_UNFILTERED()
     local spellName = select(13,CombatLogGetCurrentEventInfo())
     --print(spellName)
 
-    --innervate spell id 29166
-    local innervateBuff = false
-    for i=1,40 do 
-        local B=UnitBuff("player",i); 
-        if B == "Innervate" then
-             innervateBuff = true
-        else
-            innervateBuff = false
-        end
-    end
-
 
     if subevent == "SPELL_CAST_SUCCESS" and (sourceGUID == UnitGUID("player")) and learned then
         local costs = GetSpellPowerCost(spellID)
         -- Special thanks to Niseko for code help for the below code.  You can find his WA located here: https://wago.io/rk7idBBoX
-        if costs or innervateBuff then
+        if costs then
             for _, costInfo in ipairs(costs) do
                 if (costInfo.type == UnitPowerType("player")) then
                     local spellCost = costInfo.cost
@@ -240,7 +229,7 @@ function HTMT:COMBAT_LOG_EVENT_UNFILTERED()
                             manaUsed = manaCount
                             HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
                         end
-                    elseif innervateBuff then
+                    elseif HTMT_InnervateBuff() then
                         for k,v in pairs(shamanSpellCosts) do
                             if k == spellName then
                                 if menuOptions.inverseCheckButton then
@@ -272,6 +261,17 @@ function HTMT:COMBAT_LOG_EVENT_UNFILTERED()
             manaCount = manaCount - manaTrigger
             manaUsed = manaCount
             HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
+        end
+    end
+end
+
+-- funtion to check for innervate
+function HTMT_InnervateBuff()
+    --innervate spell id 29166
+    for i=1,40 do 
+        local B=UnitBuff("player",i); 
+        if B == "Innervate" then
+             return true
         end
     end
 end
