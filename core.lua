@@ -10,9 +10,9 @@ local LSM = LibStub("LibSharedMedia-3.0")
 
 
 -- variables used to handle the tracking of mana spent
-local manaTrigger = 40000
+local manaTrigger = 4000
 local manaCount = 0
-local manaCountInverse = 40000
+local manaCountInverse = 4000
 local formatTableOptions = {}
 local fontTableOptions = {}
 ui_reload=false
@@ -60,7 +60,7 @@ function HTMT:ADDON_LOADED()
         manaUsed = 0
     end
     if manaUsedInverse == nil then
-        manaUsedInverse = 40000
+        manaUsedInverse = 4000
     end
     if reloadedUI == nil then
         reloadedUI = false
@@ -141,8 +141,8 @@ function HTMT:Encounter_Start(...)
             HTMT_UpdateTextNonProgressBar(manaCount, menuOptions.dropdownValue, 1)
             self:Print(L["Mana count has been reset!"])
         else
-            manaCountInverse = 40000
-            manaUsedInverse = 40000
+            manaCountInverse = 4000
+            manaUsedInverse = 4000
             HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
             self:Print(L["Mana count has been reset!"])  
         end
@@ -165,8 +165,8 @@ function HTMT:PLAYER_TALENT_UPDATE()
     else
         if menuOptions.inverseCheckButton then
             if not learned and not reloadedUI then
-                manaCountInverse = 40000
-                manaUsedInverse = 40000
+                manaCountInverse = 4000
+                manaUsedInverse = 4000
                 HTMT_UpdateTextNonProgressBar(manaCountInverse, menuOptions.dropdownValue, 1)
                 htmtManaTracker:Hide()
                 self:Print(L["Mana count has been reset!"])
@@ -194,8 +194,8 @@ function HTMT:ACTIVE_TALENT_GROUP_CHANGED()
     if specID ~= 264 then
        manaCount = 0
         manaUsed = 0
-        manaCountInverse = 40000
-        manaUsedInverse = 40000
+        manaCountInverse = 4000
+        manaUsedInverse = 4000
         self:Print(L["Mana count has been reset!"])
         htmtManaTracker:Hide()
     end
@@ -308,7 +308,7 @@ end
 -- check for if ui_reload happened, if yes then store manaCount and true for reloadUI otherwise 0 and false
 function HTMT:PLAYER_LEAVING_WORLD()
     if ui_logout or ui_quit then 
-        manaUsedInverse = 40000
+        manaUsedInverse = 4000
         reloadedUI = false
         manaUsed = 0
     else
@@ -385,12 +385,12 @@ function HTMT_UpdateTextNonProgressBar(manaValue, formatType, fontType)
     elseif formatType == 2 then
         -- display text in this format
         local manaString = tostring(manaValue)
-        manaString = manaString .. " : 40k"
+        manaString = manaString .. " : 4k"
         htmtManaTrackerManaCount:SetText(manaString)
     elseif formatType == 3 then
         -- display text in this format
         local manaString = tostring(manaValue)
-        manaString = manaString .. " / 40k"
+        manaString = manaString .. " / 4k"
         htmtManaTrackerManaCount:SetText(manaString)
     elseif formatType == 4 then
         -- display text in this format
@@ -400,12 +400,12 @@ function HTMT_UpdateTextNonProgressBar(manaValue, formatType, fontType)
     elseif formatType == 5 then
         -- display text in this format
         local manaString = tostring(manaValue/1000)
-        manaString = manaString .. "k : 40k"
+        manaString = manaString .. "k : 4k"
         htmtManaTrackerManaCount:SetText(manaString)
     elseif formatType == 6 then
         -- display text in this format
         local manaString = tostring(manaValue/1000)
-        manaString = manaString .. "k / 40k"
+        manaString = manaString .. "k / 4k"
         htmtManaTrackerManaCount:SetText(manaString)
     elseif formatType == 7 then
         -- display text in this format
@@ -417,13 +417,13 @@ function HTMT_UpdateTextNonProgressBar(manaValue, formatType, fontType)
         -- display text in this format
         manaValue = tonumber(string.format("%." .. (1) .. "f", (manaValue/1000)))
         local manaString = tostring(manaValue)
-        manaString = manaString .. "k : 40k"
+        manaString = manaString .. "k : 4k"
         htmtManaTrackerManaCount:SetText(manaString)
     else
         -- display text in this format
         manaValue = tonumber(string.format("%." .. (1) .. "f", (manaValue/1000)))
         local manaString = tostring(manaValue)
-        manaString = manaString .. "k / 40k"
+        manaString = manaString .. "k / 4k"
         htmtManaTrackerManaCount:SetText(manaString)
     end
 end
